@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trend Astana Админ-панель</title>
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="wrapper">
+    <header class="header admin-header">
+      <div class="header__container _container">
+        <div class="header__body body-header">
+          <a href="index.html" class="body-header__logo">
+            <img src="img/logo.svg" alt="Trend Astana logo">
+          </a>
+          <div class="body-header__menu menu">
+            <nav class="menu__body">
+              <ul class="menu__list">
+                <li class="menu__item"><a href="#admin-categories" class="menu__link">Категории</a></li>
+                <li class="menu__item"><a href="#admin-products" class="menu__link">Товары</a></li>
+                <li class="menu__item"><a href="index.html" class="menu__link">На сайт</a></li>
+              </ul>
+            </nav>
+            <button type="button" class="menu__icon icon-menu"><span></span></button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-page admin-main">
+      <section id="admin-categories" class="panel">
+        <div class="panel__head">
+          <h1 class="panel__title main-title"><span>Категории</span></h1>
+        </div>
+        <form id="category-form" class="modal__body" hidden>
+          <div class="field">
+            <label class="modal__label" for="category-name">Название</label>
+            <input id="category-name" type="text" placeholder="Название категории" required>
+          </div>
+          <div class="field">
+            <label class="modal__label" for="category-sort-order">Порядок</label>
+            <input id="category-sort-order" type="number" min="0" step="1" value="0" placeholder="0">
+          </div>
+          <div class="modal__actions">
+            <button type="submit" id="category-submit">Сохранить</button>
+            <button type="button" id="category-cancel" class="ghost" hidden>Отмена редактирования</button>
+          </div>
+        </form>
+        <div class="table-toolbar">
+          <div class="table-search">
+            <input id="category-search" type="text" placeholder="Поиск по категориям">
+          </div>
+          <div class="actions">
+            <button type="button" id="category-open">Добавить категорию</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Порядок</th>
+                <th>Название</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="categories-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="admin-products" class="panel">
+        <div class="panel__head">
+          <h2 class="panel__title main-title"><span>Товары</span></h2>
+        </div>
+        <form id="product-form" class="modal__body modal__grid" hidden>
+          <div class="field">
+            <label class="modal__label" for="product-category">Категория</label>
+            <select id="product-category" required>
+              <option value="">Выберите категорию</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="modal__label" for="product-name">Название</label>
+            <input id="product-name" type="text" placeholder="Название товара" required>
+          </div>
+
+          <div class="field">
+            <label class="modal__label" for="product-sort-order">Порядок</label>
+            <input id="product-sort-order" type="number" min="0" step="1" value="0" placeholder="0">
+          </div>
+
+          <div class="field span-2 upload-group">
+            <label class="upload-label" for="product-image-file">Загрузить изображение</label>
+            <input id="product-image-file" type="file" accept="image/*">
+          </div>
+
+          <div class="field span-2">
+            <label class="modal__label" for="product-image">Путь к изображению</label>
+            <input id="product-image" type="text" placeholder="Путь к изображению (заполнится автоматически после загрузки)" readonly required>
+          </div>
+
+          <div class="field">
+            <label class="modal__label" for="product-price">Цена</label>
+            <input id="product-price" type="number" min="0" step="0.01" placeholder="Цена" required>
+          </div>
+
+          <div class="field">
+            <label class="modal__label" for="product-old-price">Старая цена</label>
+            <input id="product-old-price" type="number" min="0" step="0.01" placeholder="Старая цена (необязательно)">
+          </div>
+
+          <div class="field span-2">
+            <label class="modal__label" for="product-description">Описание</label>
+            <input id="product-description" type="text" placeholder="Описание (необязательно)">
+          </div>
+
+          <div class="image-preview span-2" id="product-image-preview-wrap" hidden>
+            <p class="image-preview__title">Превью изображения</p>
+            <img id="product-image-preview" src="" alt="Превью товара">
+          </div>
+
+          <div class="modal__actions span-2">
+            <button type="submit" id="product-submit">Сохранить</button>
+            <button type="button" id="product-cancel" class="ghost" hidden>Отмена редактирования</button>
+          </div>
+        </form>
+        <div class="table-toolbar">
+          <div class="table-search">
+            <input id="product-search" type="text" placeholder="Поиск по товарам">
+          </div>
+          <div class="actions">
+            <button type="button" id="product-open">Добавить товар</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Порядок</th>
+                <th>Название</th>
+                <th>Категория</th>
+                <th>Цена</th>
+                <th>Старая</th>
+                <th>Описание</th>
+                <th>Изображение</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="products-table"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="modal" id="category-modal" aria-hidden="true">
+    <div class="modal__overlay" data-close="category-modal"></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
+      <div class="modal__head">
+        <h3 class="modal__title" id="category-modal-title">Категория</h3>
+        <button type="button" class="modal__close" data-close="category-modal">Закрыть</button>
+      </div>
+      <div id="category-form-holder"></div>
+    </div>
+  </div>
+  <div class="modal" id="product-modal" aria-hidden="true">
+    <div class="modal__overlay" data-close="product-modal"></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+      <div class="modal__head">
+        <h3 class="modal__title" id="product-modal-title">Товар</h3>
+        <button type="button" class="modal__close" data-close="product-modal">Закрыть</button>
+      </div>
+      <div id="product-form-holder"></div>
+    </div>
+  </div>
+  <div id="toast" class="toast" hidden></div>
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
+
+

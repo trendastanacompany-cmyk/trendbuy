@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "source": "data/catalog.json",
+  "createdAt": "2026-03-14T00:00:00.000Z",
+  "target": {
+    "database": "postgresql",
+    "tables": ["categories", "products"],
+    "importOrder": ["categories", "products"]
+  },
+  "categories": [
+    {
+      "legacyId": "cat_1772304550750_j9auy85l",
+      "name": "Мыло / Шампун",
+      "createdAt": "2026-02-28T18:49:10.750Z",
+      "updatedAt": "2026-03-01T07:40:01.298Z"
+    }
+  ],
+  "products": [
+    {
+      "legacyId": "prd_1772350866067_69nt5ilj",
+      "legacyCategoryId": "cat_1772304550750_j9auy85l",
+      "name": "sdcsdcdsc",
+      "image": "sdcdscdsc",
+      "description": "sdcdsc",
+      "price": 20,
+      "oldPrice": 10,
+      "createdAt": "2026-03-01T07:41:06.067Z",
+      "updatedAt": "2026-03-01T07:41:06.067Z"
+    },
+    {
+      "legacyId": "prd_1772434410492_9ul0c5ax",
+      "legacyCategoryId": "cat_1772304550750_j9auy85l",
+      "name": "sdf",
+      "image": "images/products/product-1772434400080-931801009.png",
+      "description": "sdfsdf",
+      "price": 10,
+      "oldPrice": 2,
+      "createdAt": "2026-03-02T06:53:30.492Z",
+      "updatedAt": "2026-03-02T06:53:30.492Z"
+    }
+  ]
+}
