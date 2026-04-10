@@ -1,0 +1,86 @@
+name: PR Build And Deploy
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
+
+env:
+  DOCKER_IMAGE_PREFIX: trendastana
+
+jobs:
+  pr_build_check:
+    name: PR Build Check (develop -> main)
+    if: github.head_ref == 'develop' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -t $DOCKER_IMAGE_PREFIX/api:pr-${{ github.sha }} ./apps/api
+
+      - name: Build Web image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=https://trendbuy.kz/api \
+            -t $DOCKER_IMAGE_PREFIX/web:pr-${{ github.sha }} \
+            ./apps/web
+
+  deploy_on_merge:
+    name: Deploy On Merge (develop -> main)
+    if: github.head_ref == 'develop' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build release Docker images
+        run: |
+          docker build -t $DOCKER_IMAGE_PREFIX/api:${{ github.sha }} ./apps/api
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=https://trendbuy.kz/api \
+            -t $DOCKER_IMAGE_PREFIX/web:${{ github.sha }} \
+            ./apps/web
+
+      - name: Pack Docker images to archive
+        run: |
+          mkdir -p dist
+          docker save $DOCKER_IMAGE_PREFIX/api:${{ github.sha }} $DOCKER_IMAGE_PREFIX/web:${{ github.sha }} | gzip > dist/release-${{ github.sha }}.tar.gz
+
+      - name: Upload release archive to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: dist/release-${{ github.sha }}.tar.gz
+          target: ${{ secrets.DEPLOY_PATH }}/releases
+          strip_components: 1
+          overwrite: true
+
+      - name: Load archive and restart services
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+            test -f .env
+            git pull origin main
+            test -f docker-compose.release.yml
+            docker load -i releases/release-${{ github.sha }}.tar.gz
+            IMAGE_TAG=${{ github.sha }} DOCKER_IMAGE_PREFIX=${{ env.DOCKER_IMAGE_PREFIX }} docker compose -f docker-compose.release.yml up -d --remove-orphans
+            docker image prune -f
+            echo "Deploy completed for ${{ github.sha }}"
