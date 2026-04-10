@@ -82,5 +82,29 @@ jobs:
             test -f docker-compose.release.yml
             docker load -i releases/release-${{ github.sha }}.tar.gz
             IMAGE_TAG=${{ github.sha }} DOCKER_IMAGE_PREFIX=${{ env.DOCKER_IMAGE_PREFIX }} docker compose -f docker-compose.release.yml up -d --remove-orphans
+            docker compose -f docker-compose.release.yml ps
+
+            for i in $(seq 1 30); do
+              API_STATUS=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' trendastana_api)
+              WEB_STATUS=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' trendastana_web)
+              echo "Attempt $i: api=$API_STATUS web=$WEB_STATUS"
+
+              if [ "$API_STATUS" = "healthy" ] && [ "$WEB_STATUS" = "healthy" ]; then
+                echo "Services are healthy."
+                break
+              fi
+
+              if [ "$i" -eq 30 ]; then
+                echo "Healthcheck timeout. Dumping logs..."
+                docker compose -f docker-compose.release.yml ps
+                docker compose -f docker-compose.release.yml logs --tail=200 api
+                docker compose -f docker-compose.release.yml logs --tail=200 web
+                docker compose -f docker-compose.release.yml logs --tail=200 nginx
+                exit 1
+              fi
+
+              sleep 5
+            done
+
             docker image prune -f
             echo "Deploy completed for ${{ github.sha }}"
