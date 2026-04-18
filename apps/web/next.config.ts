@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../.."),
   async rewrites() {
-    const apiOrigin = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    const rawApiOrigin = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    const apiOrigin = rawApiOrigin.replace(/\/+$/, "").replace(/\/api$/, "");
     return [
       {
         source: "/api/:path*",

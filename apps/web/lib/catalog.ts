@@ -7,6 +7,15 @@ function getApiBase() {
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 }
 
+function joinApiUrl(base: string, path: string) {
+  const normalizedBase = base.replace(/\/+$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (normalizedBase.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+    return `${normalizedBase}${normalizedPath.slice(4)}`;
+  }
+  return `${normalizedBase}${normalizedPath}`;
+}
+
 export type CatalogProduct = Product & {
   slug: string;
   categoryName: string;
@@ -33,7 +42,7 @@ function makeSlug(name: string, id: string, fallbackPrefix: string) {
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${getApiBase()}${path}`, {
+  const response = await fetch(joinApiUrl(getApiBase(), path), {
     next: { revalidate: 900 }
   });
 
