@@ -698,3 +698,23 @@ docker system df
 # Очистить неиспользуемые образы
 docker image prune -f
 ```
+
+### Alias for one-command deploy (`td-deploy`)
+
+Run once on server (user `deploy`):
+
+```bash
+cat >> ~/.bashrc << 'EOF'
+alias td-deploy='cd /opt/trendastana && git pull origin main && COMPOSE_FILE=docker-compose.release.yml IMAGE_TAG=latest DOCKER_IMAGE_PREFIX=trendastana bash scripts/deploy-release.sh'
+alias td-deploy-prune='cd /opt/trendastana && git pull origin main && COMPOSE_FILE=docker-compose.release.yml IMAGE_TAG=latest DOCKER_IMAGE_PREFIX=trendastana PRUNE_PROJECT_IMAGES=1 bash scripts/deploy-release.sh'
+EOF
+source ~/.bashrc
+```
+
+Usage:
+
+```bash
+td-deploy
+# or, with extra cleanup of old trendastana/* images:
+td-deploy-prune
+```

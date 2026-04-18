@@ -3,6 +3,7 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../.."),
   async rewrites() {
     const apiOrigin = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
