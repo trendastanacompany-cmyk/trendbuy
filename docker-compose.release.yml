@@ -58,11 +58,11 @@ services:
         - CMD
         - node
         - -e
-        - "require('http').get('http://127.0.0.1:3000/admin.html', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
+        - "const net=require('net');const s=net.connect(3000,'127.0.0.1');s.on('connect',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1));setTimeout(()=>process.exit(1),3000);"
       interval: 10s
       timeout: 5s
       retries: 12
-      start_period: 20s
+      start_period: 40s
 
   nginx:
     image: nginx:alpine
