@@ -40,11 +40,13 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: https://trendbuy.kz/api
+        NEXT_PUBLIC_API_URL: https://trendbuy.kz
     container_name: trendastana_web
     restart: always
     environment:
       NODE_ENV: production
+      API_INTERNAL_URL: http://api:3001
+      NEXT_PUBLIC_API_URL: https://trendbuy.kz
     networks:
       - external
 

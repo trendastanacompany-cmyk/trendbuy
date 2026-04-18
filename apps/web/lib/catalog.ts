@@ -1,6 +1,11 @@
-﻿import type { Category, Product } from "./types";
+import type { Category, Product } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+function getApiBase() {
+  if (typeof window === "undefined") {
+    return process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  }
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+}
 
 export type CatalogProduct = Product & {
   slug: string;
@@ -28,7 +33,7 @@ function makeSlug(name: string, id: string, fallbackPrefix: string) {
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${getApiBase()}${path}`, {
     next: { revalidate: 900 }
   });
 
@@ -100,3 +105,4 @@ export async function getProductBySlugs(categorySlug: string, productSlug: strin
   const product = category.products.find((item) => item.slug === productSlug) || null;
   return product ? { category, product } : null;
 }
+

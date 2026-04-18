@@ -28,6 +28,6 @@ jobs:
       - name: Build Web image
         run: |
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL=https://trendbuy.kz/api \
+            --build-arg NEXT_PUBLIC_API_URL=https://trendbuy.kz \
             -t $DOCKER_IMAGE_PREFIX/web:pr-${{ github.sha }} \
             ./apps/web

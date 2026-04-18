@@ -1,7 +1,12 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+function getApiBase() {
+  if (typeof window === "undefined") {
+    return process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  }
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+}
 
 export function apiUrl(path: string) {
-  return `${API_BASE}${path}`;
+  return `${getApiBase()}${path}`;
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}) {

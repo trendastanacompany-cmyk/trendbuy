@@ -49,6 +49,8 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+      API_INTERNAL_URL: http://api:3001
+      NEXT_PUBLIC_API_URL: https://trendbuy.kz
     networks:
       - external
     healthcheck:
@@ -56,7 +58,7 @@ services:
         - CMD
         - node
         - -e
-        - "require('http').get('http://127.0.0.1:3000/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
+        - "require('http').get('http://127.0.0.1:3000/admin.html', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
       interval: 10s
       timeout: 5s
       retries: 12

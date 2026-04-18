@@ -8,15 +8,20 @@ RELEASE_ARCHIVE="${RELEASE_ARCHIVE:-}"
 SKIP_PULL="${SKIP_PULL:-0}"
 PRUNE_PROJECT_IMAGES="${PRUNE_PROJECT_IMAGES:-0}"
 CLEAN_RELEASE_ARCHIVE="${CLEAN_RELEASE_ARCHIVE:-0}"
+AGGRESSIVE_PRUNE="${AGGRESSIVE_PRUNE:-0}"
 
 echo "==> Docker disk usage (before cleanup)"
 docker system df || true
 
 echo "==> Pruning unused Docker resources"
 docker container prune -f || true
-docker image prune -af || true
+if [[ "$AGGRESSIVE_PRUNE" == "1" ]]; then
+  docker image prune -af || true
+  docker volume prune -f || true
+else
+  docker image prune -f || true
+fi
 docker builder prune -af || true
-docker volume prune -f || true
 
 echo "==> Docker disk usage (after cleanup)"
 docker system df || true
@@ -48,6 +53,9 @@ if [[ "$PRUNE_PROJECT_IMAGES" == "1" ]]; then
   in_use_ids="$(docker compose -f "$COMPOSE_FILE" images -q | sort -u || true)"
   docker images "${DOCKER_IMAGE_PREFIX}/*" --format "{{.Repository}}:{{.Tag}} {{.ID}}" | while read -r ref id; do
     [[ -z "${ref:-}" || -z "${id:-}" ]] && continue
+    if [[ "$ref" == "${DOCKER_IMAGE_PREFIX}/api:${IMAGE_TAG}" || "$ref" == "${DOCKER_IMAGE_PREFIX}/web:${IMAGE_TAG}" ]]; then
+      continue
+    fi
     if ! grep -qx "$id" <<<"$in_use_ids"; then
       docker rmi "$ref" || true
     fi
