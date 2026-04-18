@@ -48,6 +48,20 @@ echo "==> Starting services"
 IMAGE_TAG="$IMAGE_TAG" DOCKER_IMAGE_PREFIX="$DOCKER_IMAGE_PREFIX" docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 docker compose -f "$COMPOSE_FILE" ps
 
+if docker compose -f "$COMPOSE_FILE" ps --services | grep -qx "nginx"; then
+  echo "==> Reloading nginx config"
+  for i in $(seq 1 10); do
+    if docker compose -f "$COMPOSE_FILE" exec -T nginx nginx -s reload; then
+      break
+    fi
+    if [[ "$i" -eq 10 ]]; then
+      echo "Failed to reload nginx after deploy." >&2
+      exit 1
+    fi
+    sleep 2
+  done
+fi
+
 if [[ "$PRUNE_PROJECT_IMAGES" == "1" ]]; then
   echo "==> Removing unused project images (${DOCKER_IMAGE_PREFIX}/*)"
   in_use_ids="$(docker compose -f "$COMPOSE_FILE" images -q | sort -u || true)"

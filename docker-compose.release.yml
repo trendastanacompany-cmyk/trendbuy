@@ -58,7 +58,7 @@ services:
         - CMD
         - node
         - -e
-        - "const net=require('net');const s=net.connect(3000,'127.0.0.1');s.on('connect',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1));setTimeout(()=>process.exit(1),3000);"
+        - "require('http').get('http://127.0.0.1:3000/admin.html', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
       interval: 10s
       timeout: 5s
       retries: 12
