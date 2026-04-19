@@ -9,7 +9,6 @@ const links = [
   { href: "#products", label: "Продукция" },
   { href: "#about", label: "Почему мы" },
   { href: "#contact", label: "Контакты" },
-  { href: "/catalog", label: "SEO-каталог" }
 ];
 
 export default function SiteHeader() {
@@ -25,7 +24,13 @@ export default function SiteHeader() {
       <div className="header__container _container">
         <div className="header__body body-header">
           <a href="#home" className="body-header__logo">
-            <Image src="/img/logo.svg" alt="Trend Astana" width={188} height={52} priority />
+            <Image
+              src="/img/logo.svg"
+              alt="Trend Astana"
+              width={100}
+              height={70}
+              priority
+            />
           </a>
 
           <div className="body-header__menu menu">
@@ -34,11 +39,19 @@ export default function SiteHeader() {
                 {links.map((link) => (
                   <li className="menu__item" key={link.href}>
                     {link.href.startsWith("/") ? (
-                      <Link href={link.href} className="menu__link" onClick={() => setIsMenuOpen(false)}>
+                      <Link
+                        href={link.href}
+                        className="menu__link"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
                         {link.label}
                       </Link>
                     ) : (
-                      <a href={link.href} className="menu__link" onClick={() => setIsMenuOpen(false)}>
+                      <a
+                        href={link.href}
+                        className="menu__link"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
                         {link.label}
                       </a>
                     )}

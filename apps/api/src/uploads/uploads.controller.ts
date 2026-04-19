@@ -3,12 +3,14 @@ import {
   Controller,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname, join } from "path";
 import { mkdirSync } from "fs";
+import { AdminGuard } from "../common/admin.guard";
 
 const productsDir = join(__dirname, "..", "..", "uploads", "products");
 mkdirSync(productsDir, { recursive: true });
@@ -16,6 +18,7 @@ mkdirSync(productsDir, { recursive: true });
 @Controller("api/uploads")
 export class UploadsController {
   @Post("image")
+  @UseGuards(AdminGuard)
   @UseInterceptors(
     FileInterceptor("image", {
       storage: diskStorage({
@@ -25,10 +28,7 @@ export class UploadsController {
           const safeExt = [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext)
             ? ext
             : ".png";
-          cb(
-            null,
-            `product-${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`
-          );
+          cb(null, `product-${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`);
         }
       }),
       limits: { fileSize: 5 * 1024 * 1024 },

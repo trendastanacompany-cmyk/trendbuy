@@ -7,13 +7,28 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    # Tuned for 1 GB RAM server
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c effective_cache_size=192MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c max_connections=20
+      -c wal_buffers=4MB
+      -c checkpoint_completion_target=0.9
+      -c random_page_cost=1.1
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - internal
+    deploy:
+      resources:
+        limits:
+          memory: 192m
 
   api:
-    image: ${DOCKER_IMAGE_PREFIX:-trendastana}/api:${IMAGE_TAG:-latest}
+    image: ${REGISTRY:-ghcr.io/trendastanacompany-cmyk}/trendbuy-api:${IMAGE_TAG:-latest}
     container_name: trendastana_api
     restart: always
     environment:
@@ -25,6 +40,9 @@ services:
       DB_SYNC: "false"
       PORT: 3001
       NODE_ENV: production
+      NODE_OPTIONS: "--max-old-space-size=200"
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      ALLOWED_ORIGIN: "https://trendbuy.kz"
     depends_on:
       - postgres
     networks:
@@ -32,36 +50,48 @@ services:
       - external
     volumes:
       - uploads_data:/app/uploads
+    deploy:
+      resources:
+        limits:
+          memory: 256m
     healthcheck:
       test:
         - CMD
         - node
         - -e
         - "require('http').get('http://127.0.0.1:3001/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
-      interval: 10s
+      interval: 15s
       timeout: 5s
-      retries: 12
-      start_period: 20s
+      retries: 10
+      start_period: 30s
 
   web:
-    image: ${DOCKER_IMAGE_PREFIX:-trendastana}/web:${IMAGE_TAG:-latest}
+    image: ${REGISTRY:-ghcr.io/trendastanacompany-cmyk}/trendbuy-web:${IMAGE_TAG:-latest}
     container_name: trendastana_web
     restart: always
     environment:
       NODE_ENV: production
       API_INTERNAL_URL: http://api:3001
       NEXT_PUBLIC_API_URL: https://trendbuy.kz
+      NODE_OPTIONS: "--max-old-space-size=256"
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
     networks:
       - external
+    deploy:
+      resources:
+        limits:
+          memory: 320m
     healthcheck:
       test:
         - CMD
         - node
         - -e
-        - "require('http').get('http://127.0.0.1:3000/admin.html', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
-      interval: 10s
+        - "require('http').get('http://127.0.0.1:3000/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
+      interval: 15s
       timeout: 5s
-      retries: 12
+      retries: 10
       start_period: 40s
 
   nginx:
@@ -81,6 +111,10 @@ services:
       - web
     networks:
       - external
+    deploy:
+      resources:
+        limits:
+          memory: 64m
 
   certbot:
     image: certbot/certbot

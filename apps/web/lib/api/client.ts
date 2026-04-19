@@ -28,7 +28,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
   const response = await fetch(apiUrl(path), {
     ...options,
     headers,
-    cache: "no-store"
+    cache: "no-store",
   });
 
   if (response.status === 204) return null as T;

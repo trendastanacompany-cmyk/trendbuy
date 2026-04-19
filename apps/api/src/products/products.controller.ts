@@ -7,8 +7,10 @@ import {
   Param,
   Post,
   Put,
-  Query
+  Query,
+  UseGuards
 } from "@nestjs/common";
+import { AdminGuard } from "../common/admin.guard";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { ProductsService } from "./products.service";
@@ -28,6 +30,7 @@ export class ProductsController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   async create(@Body() dto: CreateProductDto) {
     const product = await this.productsService.create(dto);
     return {
@@ -38,6 +41,7 @@ export class ProductsController {
   }
 
   @Put(":id")
+  @UseGuards(AdminGuard)
   async update(@Param("id") id: string, @Body() dto: UpdateProductDto) {
     const product = await this.productsService.update(id, dto);
     return {
@@ -48,6 +52,7 @@ export class ProductsController {
   }
 
   @Delete(":id")
+  @UseGuards(AdminGuard)
   @HttpCode(204)
   async remove(@Param("id") id: string) {
     await this.productsService.remove(id);
