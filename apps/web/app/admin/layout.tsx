@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
@@ -6,14 +6,15 @@ export const metadata: Metadata = {
     index: false,
     follow: false,
     nocache: true,
-    googleBot: {
-      index: false,
-      follow: false,
-      noimageindex: true
-    }
-  }
+    googleBot: { index: false, follow: false, noimageindex: true },
+  },
 };
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <>
+      <link rel="stylesheet" href="/css/admin.css" />
+      {children}
+    </>
+  );
 }

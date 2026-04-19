@@ -1,10 +1,9 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { CatalogCategory } from "../lib/catalog";
-import { normalizeImagePath } from "../lib/catalog";
+import type { CatalogCategory } from "../../lib/catalog";
+import { normalizeImagePath } from "../../lib/catalog";
 
 type Props = {
   categories: CatalogCategory[];
@@ -23,7 +22,7 @@ export default function ProductCatalog({ categories }: Props) {
         category.products.map((product) => ({
           ...product,
           categoryName: category.name,
-          categorySlug: category.slug
+          categorySlug: category.slug,
         }))
       );
     }
@@ -34,7 +33,7 @@ export default function ProductCatalog({ categories }: Props) {
     return target.products.map((product) => ({
       ...product,
       categoryName: target.name,
-      categorySlug: target.slug
+      categorySlug: target.slug,
     }));
   }, [categories, selectedCategory]);
 
@@ -70,7 +69,7 @@ export default function ProductCatalog({ categories }: Props) {
             {visibleProducts.map((product) => (
               <li className="products__item" key={product.id}>
                 <article>
-                  <Link href={`/catalog/${product.categorySlug}/${product.slug}`} className="products__image">
+                  <div className="products__image">
                     <Image
                       src={normalizeImagePath(product.image)}
                       alt={product.name}
@@ -78,20 +77,22 @@ export default function ProductCatalog({ categories }: Props) {
                       height={420}
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 45vw, 20vw"
                       loading="lazy"
+                      unoptimized
                     />
-                  </Link>
+                  </div>
                   <div className="products__description">
                     <h3 className="products__name">{product.name}</h3>
-                    <span className="additional-information">{product.description || product.categoryName}</span>
+                    <span className="additional-information">
+                      {product.description || product.categoryName}
+                    </span>
                     <div className="products__info">
                       <span className="regular">
-                        {product.oldPrice ? <span>{formatPrice(product.oldPrice)} тг / </span> : null}
+                        {product.oldPrice ? (
+                          <span>{formatPrice(product.oldPrice)} тг / </span>
+                        ) : null}
                       </span>
                       <span className="bold">{formatPrice(product.price)} тг</span>
                     </div>
-                    <Link href={`/catalog/${product.categorySlug}`} className="menu__link">
-                      Смотреть категорию
-                    </Link>
                   </div>
                 </article>
               </li>

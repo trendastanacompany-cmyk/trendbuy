@@ -1,52 +1,62 @@
-name: Deploy Main
+name: Deploy to Production
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 concurrency:
-  group: deploy-main
+  group: deploy-production
   cancel-in-progress: true
 
 env:
-  DOCKER_IMAGE_PREFIX: trendastana
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
 
 jobs:
-  deploy:
-    name: Build Archive And Deploy
+  build:
+    name: Build & Push Images
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - name: Build release Docker images
-        run: |
-          docker build -t $DOCKER_IMAGE_PREFIX/api:${{ github.sha }} ./apps/api
-          docker build \
-            --build-arg NEXT_PUBLIC_API_URL=https://trendbuy.kz \
-            -t $DOCKER_IMAGE_PREFIX/web:${{ github.sha }} \
-            ./apps/web
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Pack Docker images to archive
-        run: |
-          mkdir -p dist
-          docker save $DOCKER_IMAGE_PREFIX/api:${{ github.sha }} $DOCKER_IMAGE_PREFIX/web:${{ github.sha }} | gzip > dist/release-${{ github.sha }}.tar.gz
-
-      - name: Upload release archive to server
-        uses: appleboy/scp-action@v0.1.7
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: dist/release-${{ github.sha }}.tar.gz
-          target: ${{ secrets.DEPLOY_PATH }}/releases
-          strip_components: 1
-          overwrite: true
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Load archive and restart services
+      - name: Build & push API
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/api
+          push: true
+          tags: ${{ env.REGISTRY }}/trendbuy-api:${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build & push Web
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/web
+          push: true
+          build-args: NEXT_PUBLIC_API_URL=https://trendbuy.kz
+          tags: ${{ env.REGISTRY }}/trendbuy-web:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -56,39 +66,49 @@ jobs:
           script: |
             set -e
             cd ${{ secrets.DEPLOY_PATH }}
+
             test -f .env
-            git pull origin main
             test -f docker-compose.release.yml
-            test -f scripts/deploy-release.sh
-            COMPOSE_FILE=docker-compose.release.yml \
+
+            # Login to ghcr.io
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+              -u ${{ github.repository_owner }} --password-stdin
+
+            git pull origin main
+
+            # Pull new images (only api and web — nginx/postgres unchanged)
+            REGISTRY=ghcr.io/${{ github.repository_owner }} \
             IMAGE_TAG=${{ github.sha }} \
-            DOCKER_IMAGE_PREFIX=${{ env.DOCKER_IMAGE_PREFIX }} \
-            RELEASE_ARCHIVE=releases/release-${{ github.sha }}.tar.gz \
-            CLEAN_RELEASE_ARCHIVE=1 \
-            SKIP_PULL=1 \
-            PRUNE_PROJECT_IMAGES=1 \
-            bash scripts/deploy-release.sh
+            docker compose -f docker-compose.release.yml pull api web
 
-            for i in $(seq 1 30); do
-              API_STATUS=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' trendastana_api)
-              WEB_STATUS=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' trendastana_web)
-              echo "Attempt $i: api=$API_STATUS web=$WEB_STATUS"
+            # Start services with new images
+            REGISTRY=ghcr.io/${{ github.repository_owner }} \
+            IMAGE_TAG=${{ github.sha }} \
+            docker compose -f docker-compose.release.yml up -d --remove-orphans
 
-              if [ "$API_STATUS" = "healthy" ] && [ "$WEB_STATUS" = "healthy" ]; then
-                echo "Services are healthy."
-                break
-              fi
+            # Free disk: remove all images not used by running containers
+            docker image prune -af
 
-              if [ "$i" -eq 30 ]; then
-                echo "Healthcheck timeout. Dumping logs..."
-                docker compose -f docker-compose.release.yml ps
-                docker compose -f docker-compose.release.yml logs --tail=200 api
-                docker compose -f docker-compose.release.yml logs --tail=200 web
-                docker compose -f docker-compose.release.yml logs --tail=200 nginx
-                exit 1
-              fi
+            # Reload nginx config if running
+            docker compose -f docker-compose.release.yml \
+              exec -T nginx nginx -s reload 2>/dev/null || true
 
+      - name: Health check
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+            for i in $(seq 1 40); do
+              API=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' trendastana_api 2>/dev/null || echo missing)
+              WEB=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' trendastana_web 2>/dev/null || echo missing)
+              echo "[$i/40] api=$API  web=$WEB"
+              [ "$API" = "healthy" ] && [ "$WEB" = "healthy" ] && echo "Deploy complete." && exit 0
               sleep 5
             done
-
-            echo "Deploy completed for ${{ github.sha }}"
+            echo "Timeout. Logs:"
+            docker compose -f docker-compose.release.yml logs --tail=80 api web
+            exit 1

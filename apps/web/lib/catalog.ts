@@ -53,10 +53,17 @@ async function fetchJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-export function normalizeImagePath(path: string) {
-  if (!path) return "/img/products/product-01.png";
-  if (/^https?:\/\//i.test(path)) return path;
-  return path.startsWith("/") ? path : `/${path}`;
+export function normalizeImagePath(imagePath: string) {
+  if (!imagePath) return "/img/products/product-01.png";
+  if (/^https?:\/\//i.test(imagePath)) {
+    try {
+      const url = new URL(imagePath);
+      return url.pathname;
+    } catch {
+      return "/img/products/product-01.png";
+    }
+  }
+  return imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
 }
 
 export async function getCatalogData() {
