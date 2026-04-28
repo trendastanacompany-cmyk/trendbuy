@@ -71,6 +71,7 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
       API_INTERNAL_URL: http://api:3001
       NEXT_PUBLIC_API_URL: https://trendbuy.kz
       NODE_OPTIONS: "--max-old-space-size=256"
@@ -88,7 +89,7 @@ services:
         - CMD
         - node
         - -e
-        - "require('http').get('http://127.0.0.1:3000/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
+        - "require('http').get('http://localhost:3000/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
       interval: 15s
       timeout: 5s
       retries: 10
