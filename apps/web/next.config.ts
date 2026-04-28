@@ -10,7 +10,10 @@ const nextConfig: NextConfig = {
   // when the monorepo root doesn't have next/package.json resolvable
   ...(isProd && { outputFileTracingRoot: path.join(__dirname, "../..") }),
   async rewrites() {
-    const rawApiOrigin = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    const rawApiOrigin =
+      process.env.API_INTERNAL_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:4000";
     const apiOrigin = rawApiOrigin.replace(/\/+$/, "").replace(/\/api$/, "");
     return [
       {
