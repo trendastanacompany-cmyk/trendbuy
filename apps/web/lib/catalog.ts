@@ -55,6 +55,23 @@ async function fetchJson<T>(path: string): Promise<T> {
 
 export function normalizeImagePath(imagePath: string) {
   if (!imagePath) return "/img/products/product-01.png";
+  const trimmed = imagePath.trim();
+  if (!trimmed) return "/img/products/product-01.png";
+
+  // Legacy data can store only filename like "product-213.png".
+  // Treat these as uploads from the products directory.
+  if (!trimmed.includes("/") && /^product-\d+.*\.(png|jpe?g|webp|gif)$/i.test(trimmed)) {
+    return `/uploads/products/${trimmed}`;
+  }
+
+  if (trimmed.startsWith("uploads/")) {
+    return `/${trimmed}`;
+  }
+
+  if (trimmed.startsWith("uploads")) {
+    return `/${trimmed.replace(/^\/+/, "")}`;
+  }
+
   if (/^https?:\/\//i.test(imagePath)) {
     try {
       const url = new URL(imagePath);
@@ -63,7 +80,7 @@ export function normalizeImagePath(imagePath: string) {
       return "/img/products/product-01.png";
     }
   }
-  return imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
 }
 
 export async function getCatalogData() {
