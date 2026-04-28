@@ -55,9 +55,15 @@ async function fetchJson<T>(path: string): Promise<T> {
 
 export function normalizeImagePath(imagePath: string) {
   if (!imagePath) return "/img/products/product-01.png";
+  if (imagePath.includes("/uploads/") || imagePath.startsWith("uploads/")) {
+    return "/img/products/product-01.png";
+  }
   if (/^https?:\/\//i.test(imagePath)) {
     try {
       const url = new URL(imagePath);
+      if (url.pathname.includes("/uploads/")) {
+        return "/img/products/product-01.png";
+      }
       return url.pathname;
     } catch {
       return "/img/products/product-01.png";
@@ -121,4 +127,3 @@ export async function getProductBySlugs(categorySlug: string, productSlug: strin
   const product = category.products.find((item) => item.slug === productSlug) || null;
   return product ? { category, product } : null;
 }
-
