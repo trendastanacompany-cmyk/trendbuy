@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const isProd = process.env.NODE_ENV === "production";
+const defaultApiOrigin = isProd ? "http://api:3001" : "http://localhost:4000";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -13,7 +14,7 @@ const nextConfig: NextConfig = {
     const rawApiOrigin =
       process.env.API_INTERNAL_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:4000";
+      defaultApiOrigin;
     const apiOrigin = rawApiOrigin.replace(/\/+$/, "").replace(/\/api$/, "");
     return [
       {
