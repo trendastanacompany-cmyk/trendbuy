@@ -15,10 +15,12 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 # Locate the real Next standalone entrypoint (exclude node_modules internals)
+# and store it as a relative path so it is valid in the runtime image.
 RUN ENTRY=$(find /app/.next/standalone -type f -name "server.js" ! -path "*/node_modules/*" | sort | head -1) && \
     test -n "$ENTRY" && \
-    echo "Found standalone entry: $ENTRY" && \
-    echo "$ENTRY" > /app/.next/standalone/.entrypoint
+    REL="${ENTRY#/app/.next/standalone/}" && \
+    echo "Found standalone entry: $ENTRY (rel: $REL)" && \
+    echo "$REL" > /app/.next/standalone/.entrypoint
 
 # ─── Production image ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS production
@@ -36,7 +38,7 @@ COPY --from=builder /app/.next/standalone/.entrypoint ./.entrypoint
 
 # Static assets must sit next to the server.js that serves them
 RUN ENTRY=$(cat /app/.entrypoint) && \
-    ENTRY_DIR=$(dirname "$ENTRY") && \
+    ENTRY_DIR="/app/$(dirname "$ENTRY")" && \
     echo "Entry directory: $ENTRY_DIR"
 
 COPY --from=builder /app/.next/static ./.next/static
@@ -44,11 +46,13 @@ COPY --from=builder /app/public ./public
 
 # Place static/public next to server.js as well (handles monorepo path variants)
 RUN ENTRY_DIR=$(dirname "$(cat /app/.entrypoint)") && \
-    if [ "$ENTRY_DIR" != "/app" ]; then \
+    ENTRY_DIR="/app/$ENTRY_DIR" && \
+    if [ "$ENTRY_DIR" != "/app/." ]; then \
+      mkdir -p "$ENTRY_DIR/.next" && \
       cp -r /app/.next/static "$ENTRY_DIR/.next/static" 2>/dev/null || true; \
       cp -r /app/public "$ENTRY_DIR/public" 2>/dev/null || true; \
     fi
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "exec node $(cat /app/.entrypoint)"]
+CMD ["sh", "-c", "exec node /app/$(cat /app/.entrypoint)"]
