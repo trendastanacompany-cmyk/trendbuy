@@ -70,9 +70,21 @@ jobs:
             test -f .env
             test -f docker-compose.release.yml
 
+            GHCR_USERNAME="${{ secrets.GHCR_USERNAME }}"
+            GHCR_TOKEN="${{ secrets.GHCR_TOKEN }}"
+
+            if [ -z "$GHCR_TOKEN" ]; then
+              echo "GHCR_TOKEN is empty. Add repository secret GHCR_TOKEN (PAT with read:packages)." >&2
+              exit 1
+            fi
+            if [ -z "$GHCR_USERNAME" ]; then
+              echo "GHCR_USERNAME is empty. Add repository secret GHCR_USERNAME." >&2
+              exit 1
+            fi
+
             # Login to ghcr.io
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
-              -u ${{ github.repository_owner }} --password-stdin
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io \
+              -u "$GHCR_USERNAME" --password-stdin
 
             git pull origin main
 
