@@ -14,8 +14,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN npm run build
 
-# Locate server.js within the standalone output and save its path
-RUN ENTRY=$(find /app/.next/standalone -name "server.js" | head -1) && \
+# Locate the real Next standalone entrypoint (exclude node_modules internals)
+RUN ENTRY=$(find /app/.next/standalone -type f -name "server.js" ! -path "*/node_modules/*" | sort | head -1) && \
+    test -n "$ENTRY" && \
     echo "Found standalone entry: $ENTRY" && \
     echo "$ENTRY" > /app/.next/standalone/.entrypoint
 
